@@ -3,6 +3,7 @@ package diffusion
 import (
 	"m/difftools/funcs"
 	"math/rand"
+	// "fmt"
 )
 
 func Adjmat(adj [][]int, SeedSet []int, seed int64, prob_map [2][2][2][2]float64, pop_list [2]int, interest_list [][]int, assum_list [][]int) [][]int {
@@ -14,15 +15,16 @@ func Adjmat(adj [][]int, SeedSet []int, seed int64, prob_map [2][2][2][2]float64
 		recieved_list[i] = make([]int, 0, n)
 	}
 
-	if seed != -1 {
-		rand.Seed(seed)
-	}
+
+	_ = seed
 
 	current := make([][]int, InfoTypes_n)
 	for i := 0; i < InfoTypes_n; i++ {
 		current[i] = make([]int, 0, n)
 	}
 	var infotypes []int = []int{InfoType_F, InfoType_T}
+
+	//初期設定(発信源を設定している)
 	for j := 0; j < n; j++ {
 		for _, info := range infotypes {
 			if SeedSet[j] == info+1 {
@@ -34,7 +36,11 @@ func Adjmat(adj [][]int, SeedSet []int, seed int64, prob_map [2][2][2][2]float64
 	}
 
 	//main loop
+	counter := 0
 	for len(current[InfoType_F]) > 0 || len(current[InfoType_T]) > 0 {
+		counter = counter + 1
+		// fmt.Println("current",current)
+		// fmt.Println("recieved_list",recieved_list)
 		next := make([][]int, InfoTypes_n)
 		for info, set := range current {
 			for _, s_node := range set {
@@ -42,17 +48,27 @@ func Adjmat(adj [][]int, SeedSet []int, seed int64, prob_map [2][2][2][2]float64
 				interest := interest_list[s_node][pop]
 				assum := assum_list[s_node][info]
 				p := prob_map[pop][info][interest][assum]
+				if counter == 1{
+					p = p*2
+				}
 
 				for j := 0; j < n; j++ {
 					if adj[s_node][j] == 0 || funcs.Set_Has(recieved_list[InfoType_F], j) || funcs.Set_Has(recieved_list[InfoType_T], j) || funcs.Set_Has(next[InfoType_F], j) || funcs.Set_Has(next[info], j) {
 						//道がないorすでに情報を受け取っているor次に偽の情報または同じ種類の情報を受け取ろうとしている
 						continue
 					}
-					if p == 1 || p > rand.Float64() {
+					randp := rand.Float64()
+					// fmt.Println(randp)
+
+					if p == 1 || p > randp {
+						// fmt.Println(s_node,"to",j,"\t",info, "complete",p,randp)
 						next[info] = append(next[info], j)
-						if info == InfoType_F && funcs.Set_Has(next[InfoType_F], j) {
+						if info == InfoType_F && funcs.Set_Has(next[InfoType_T], j) {
 							remove(next[InfoType_T], j)
 						}
+					}else{
+						// fmt.Println(s_node,"to",j,"\t",info, "defete",p,randp)
+
 					}
 				}
 			}
@@ -63,6 +79,7 @@ func Adjmat(adj [][]int, SeedSet []int, seed int64, prob_map [2][2][2][2]float64
 			recieved_list[info] = funcs.Set_Sum(recieved_list[info], next[info])
 		}
 	}
+	// fmt.Println("recieved_list:",recieved_list)
 	return recieved_list
 }
 

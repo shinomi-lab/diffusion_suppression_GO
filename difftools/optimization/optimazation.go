@@ -2,15 +2,13 @@ package optimization
 
 import (
 	diff "m/difftools/diffusion"
-	"math/rand"
 )
 
 func Infl_prop_exp(seed int64, sample_size int, adj [][]int, Seed_set []int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int) []float64 {
 	// return value is result of mont (配列で影響関数の答えがinfoごとにある)
 	// n := len(adj)
-	if seed != -1 {
-		rand.Seed(seed)
-	}
+
+	_ = seed
 	dist := make([][]int, diff.InfoTypes_n)
 	ans := make([]float64, diff.InfoTypes_n)
 

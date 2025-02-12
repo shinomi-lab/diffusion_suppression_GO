@@ -9,7 +9,9 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
 	// "time"
+	"sort"
 )
 
 func Check_submod(seed int64, k int, sample_size int, adj [][]int, SeedSet_F []int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int, folder_path string) ([]int, [][]float64) {
@@ -30,7 +32,7 @@ func Check_submod(seed int64, k int, sample_size int, adj [][]int, SeedSet_F []i
 	}
 
 	sizes := []int{3, 4, 5}
-	loop := 60
+	loop := 400
 	// sets_len := len(sizes)*loop
 
 	mont_loop := 1
@@ -41,7 +43,6 @@ func Check_submod(seed int64, k int, sample_size int, adj [][]int, SeedSet_F []i
 
 	var s_dist []float64 = make([]float64, n)
 
-	rand.Seed(seed)
 
 	//create file
 	new_folder_path := folder_path + "/Check_submod"
@@ -75,11 +76,12 @@ func Check_submod(seed int64, k int, sample_size int, adj [][]int, SeedSet_F []i
 
 			SetA = make([]int, n)
 			_ = copy(SetA, S)
-			setA_list := Make_SeedSet_T(SetA, sizes[j], adj)
-
+			// setA_list := Make_SeedSet_T_Random(SetA, sizes[j], adj)
+			setA_list := Make_SeedSet_T_Strong(SetA, sizes[j], adj, 10)
 			SetB = make([]int, n)
 			_ = copy(SetB, S)
-			setB_list := Make_SeedSet_T(SetB, sizes[j], adj)
+			// setB_list := Make_SeedSet_T_Random(SetB, sizes[j], adj)
+			setB_list := Make_SeedSet_T_Strong(SetB, sizes[j], adj, 10)
 
 			Sets[0] = setA_list
 			Sets[1] = setB_list
@@ -144,7 +146,7 @@ func Check_submod(seed int64, k int, sample_size int, adj [][]int, SeedSet_F []i
 
 func FocusLoop(loop_n int, list1 []int, list2 []int, SeedSet_F []int, seed int64, sample_size int, adj [][]int, prob_map [2][2][2][2]float64, pop [2]int, interest_list [][]int, assum_list [][]int, folder_path string) {
 
-	rand.Seed(seed)
+	_ = seed
 
 	// now := time.Now()
 
@@ -171,13 +173,13 @@ func FocusLoop(loop_n int, list1 []int, list2 []int, SeedSet_F []int, seed int64
 		}
 	}
 
-	var SetAandB []int
-	SetAandB = make([]int, n)
+	// var SetAandB []int
+	SetAandB := make([]int, n)
 	_ = copy(SetAandB, SeedSet_F)
 	append_seedset_T(SetAandB, Set_Multi(list1, list2))
 
-	var SetAorB []int
-	SetAorB = make([]int, n)
+	// var SetAorB []int
+	SetAorB := make([]int, n)
 	_ = copy(SetAorB, SeedSet_F)
 	append_seedset_T(SetAorB, Set_Sum(list1, list2))
 
@@ -234,7 +236,7 @@ func FocusLoop(loop_n int, list1 []int, list2 []int, SeedSet_F []int, seed int64
 	}
 }
 
-func Make_SeedSet_T(Su []int, k int, adj [][]int) []int {
+func Make_SeedSet_T_Random(Su []int, k int, adj [][]int) []int {
 	n := len(Su)
 	var sets []int
 	Set := make([]int, 0, len(Su)) //選ばれる可能性があるノードたち(出次数が1以上)
@@ -256,6 +258,49 @@ func Make_SeedSet_T(Su []int, k int, adj [][]int) []int {
 
 	for i := 0; i < k; {
 		result := Set[rand.Intn(len(Set))]
+
+		if Su[result] == 0 {
+			Su[result] = 2
+			sets = append(sets, result)
+			i++
+		}
+	}
+	return sets
+}
+
+type Node_power struct {
+	NodeName int
+	power    int //次数
+}
+
+func Make_SeedSet_T_Strong(Su []int, k int, adj [][]int, size int) []int {
+	n := len(Su)
+	var sets []int
+	Set := make([]Node_power, size)
+	var count int
+
+	for i := 0; i < n; i++ {
+		count = 0
+		for j := 0; j < n; j++ {
+			if adj[i][j] > 0 {
+				if Su[i] == 0 {
+					count++
+				}
+			}
+		}
+		node := Node_power{i, count}
+
+		if Set[size-1].power < node.power {
+			Set[size-1] = node
+			sort.Slice(Set, func(i, j int) bool { return Set[i].power > Set[j].power })
+		}
+
+	}
+	sets = append(sets, Set[0].NodeName) //一番強い奴は固定
+	Su[Set[0].NodeName] = 2
+	for i := 0; i < k-1; {
+
+		result := Set[rand.Intn(len(Set))].NodeName
 
 		if Su[result] == 0 {
 			Su[result] = 2

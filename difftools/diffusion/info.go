@@ -24,7 +24,8 @@ var Set []int
 
 func Make_seedSet_F(n int, k int, seed int64, adj [][]int) []int {
 	//n:ノード数,k:SeedSetFの個数
-	rand.Seed(seed)
+	// rand.Seed(seed)
+	_ = seed
 	Fs := make([]int, n)
 	Set = make([]int,0,n)//選ばれる可能性があるノードたち(出次数が1以上)
 
